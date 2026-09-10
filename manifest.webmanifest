@@ -1,0 +1,23 @@
+{
+  "name": "Chordbook · Guitar Chord Charts",
+  "short_name": "Chordbook",
+  "description": "Every guitar chord, every variation, in your pocket. Search, hear and learn chords with JustinGuitar lessons.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14110f",
+  "theme_color": "#14110f",
+  "categories": ["music", "education"],
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Search chords", "url": "./index.html#/search", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Chord finder", "url": "./index.html#/finder", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Saved chords", "url": "./index.html#/favorites", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
