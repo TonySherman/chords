@@ -53,7 +53,7 @@
   const pianoCache = new Map();
   function pianoVoicings(r, s) { const k = key(r, s); if (!pianoCache.has(k)) pianoCache.set(k, window.Piano.voicings(r, s)); return pianoCache.get(k); }
   /** Voicings for the active instrument (guitar shapes or piano inversions) */
-  function voicingsFor(r, s) { return isPiano() ? (chordExists(r, s) ? pianoVoicings(r, s) : []) : voicings(r, s); }
+  function voicingsFor(r, s) { return isPiano() ? (chordAvailable(r, s) ? pianoVoicings(r, s) : []) : voicings(r, s); }
   function midiOf(v) { return isPiano() ? v.midi : T.voicingMidi(v); }
   function renderDiagram(v, r, extra = {}) {
     return isPiano() ? window.Piano.render(v, Object.assign({ labels: settings.labels, root: r }, extra)) : window.Diagram.render(v, diagramOpts(r, extra));
@@ -67,6 +67,14 @@
   }
   function updateInstToggle() { $$('#instToggle button').forEach(b => b.classList.toggle('on', b.dataset.inst === settings.instrument)); }
   function chordExists(r, s) { return voicings(r, s).length > 0; }
+  /** Piano can voice any slash chord (any major/minor over any bass), not just the ones in the guitar library */
+  function chordAvailable(r, s) {
+    if (chordExists(r, s)) return true;
+    if (!isPiano() || !T.isSlash(s) || !DATA[r]) return false;
+    const { bass } = T.parseSlash(s);
+    return T.pc(bass) != null;
+  }
+  const slashSuffix = (quality, bassPc) => (quality === 'minor' ? 'm' : '') + '/' + T.DATA_KEYS[((bassPc % 12) + 12) % 12];
   function suffixesFor(root) {
     const all = Object.keys(DATA[root] || {});
     const order = T.TYPE_ORDER;
@@ -150,6 +158,7 @@
         const sufs = suffixesFor(dk);
         if (bass != null) {
           for (const sf of sufs) if (T.isSlash(sf)) { const p = T.parseSlash(sf); if (T.pc(p.bass) === bass && ((rest === 'm') === (p.quality === 'minor'))) results.push({ root: dk, suffix: sf, score: 100 }); }
+          if (!results.length && isPiano()) results.push({ root: dk, suffix: slashSuffix(rest === 'm' ? 'minor' : 'major', bass), score: 100 });
           if (!results.length) { // fall back to the plain chord
             results.push({ root: dk, suffix: rest === 'm' ? 'minor' : 'major', score: 60, note: 'No slash voicing in library' });
           }
@@ -554,7 +563,15 @@
       const setBpm = v => { const b = Math.max(40, Math.min(200, v)); store.set('bpm', b); $('#bpmVal').textContent = b + ' bpm'; };
       $('#bpmDown').onclick = () => setBpm(store.get('bpm', 80) - 5);
       $('#bpmUp').onclick = () => setBpm(store.get('bpm', 80) + 5);
-      const transpose = n => { progression = progression.map(p => { const r = T.DATA_KEYS[(T.pc(p.root) + n + 12) % 12]; return chordExists(r, p.suffix) ? { root: r, suffix: p.suffix, vi: 0 } : p; }); store.set('progression', progression); renderProgression(); haptic(); };
+      const transpose = n => {
+        progression = progression.map(p => {
+          const r = T.DATA_KEYS[(T.pc(p.root) + n + 12) % 12];
+          let s = p.suffix;
+          if (T.isSlash(s)) { const { quality, bass } = T.parseSlash(s); s = slashSuffix(quality, T.pc(bass) + n); }
+          return chordAvailable(r, s) ? { root: r, suffix: s, vi: 0 } : p;
+        });
+        store.set('progression', progression); renderProgression(); haptic();
+      };
       $('#trDown').onclick = () => transpose(-1);
       $('#trUp').onclick = () => transpose(1);
       $('#progClear').onclick = () => { if (confirm('Clear the whole progression?')) { progression = []; store.set('progression', []); renderProgression(); } };
@@ -647,9 +664,14 @@
     const res = T.identify(pcs, bass).slice(0, 8);
     if (!res.length) { out.innerHTML = `<div class="empty" style="padding:20px"><b>No standard chord matches</b>Try adding or removing a note.</div>`; return; }
     out.innerHTML = res.map((r, i) => {
-      const exists = chordExists(r.root, r.suffix);
+      let linkSuffix = r.suffix;
+      if (r.symbol.includes('/') && (r.suffix === 'major' || r.suffix === 'minor')) {
+        const cand = slashSuffix(r.suffix, T.pc(r.symbol.split('/')[1]));
+        if (chordAvailable(r.root, cand)) linkSuffix = cand;
+      }
+      const exists = chordAvailable(r.root, linkSuffix);
       const inner = `<span class="sym">${esc(r.symbol).replace(/#/g, '♯')}</span><span class="n">${esc(T.typeInfo(r.suffix).name)}${r.missing ? ' · no 5th' : ''}</span>${exists ? I.chev : ''}`;
-      return exists ? `<a class="result-row${i === 0 ? ' best' : ''}" href="${href(r.root, r.suffix)}">${inner}</a>` : `<div class="result-row${i === 0 ? ' best' : ''}">${inner}</div>`;
+      return exists ? `<a class="result-row${i === 0 ? ' best' : ''}" href="${href(r.root, linkSuffix)}">${inner}</a>` : `<div class="result-row${i === 0 ? ' best' : ''}">${inner}</div>`;
     }).join('');
   }
 

@@ -3,6 +3,7 @@
   let ctx = null;
   const cache = new Map();
   let master = null;
+  let pianoBus = null;
 
   function ensure() {
     if (!ctx) {
@@ -15,6 +16,11 @@
       const comp = ctx.createDynamicsCompressor();
       comp.threshold.value = -14; comp.knee.value = 20; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.2;
       master.connect(lp); lp.connect(comp); comp.connect(ctx.destination);
+      pianoBus = ctx.createBiquadFilter();
+      pianoBus.type = 'lowpass'; pianoBus.frequency.value = 2600; pianoBus.Q.value = 0.6;
+      const warmth = ctx.createBiquadFilter();
+      warmth.type = 'lowshelf'; warmth.frequency.value = 260; warmth.gain.value = 4;
+      pianoBus.connect(warmth); warmth.connect(master);
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
@@ -75,31 +81,38 @@
     return buf;
   }
 
-  // Simple additive piano-like tone rendered into a buffer (cached per pitch)
+  // Piano-like tone rendered into a buffer (cached per pitch). Warm rather than bright:
+  // strong fundamental with a slightly detuned unison partner (like a piano's 2-3 strings per note),
+  // upper partials that are quiet and die quickly, so the note darkens as it decays.
   const pianoCache = new Map();
   function pianoBufferFor(midi) {
     if (pianoCache.has(midi)) return pianoCache.get(midi);
     const c = ensure();
-    const sr = c.sampleRate, dur = 2.8, n = Math.floor(sr * dur);
+    const sr = c.sampleRate, dur = 3.2, n = Math.floor(sr * dur);
     const buf = c.createBuffer(1, n, sr);
     const out = buf.getChannelData(0);
     const f0 = midiToFreq(midi);
-    // harmonic amplitudes and decay rates (higher partials die faster); slight inharmonicity
-    const partials = [1, 0.5, 0.33, 0.2, 0.12, 0.08, 0.05];
-    const decays = [1.6, 2.4, 3.2, 4.5, 6, 8, 10].map(d => d * (1 + (midi - 60) / 40));
+    const rel = (midi - 60) / 24; // -1 (C2) .. +1 (C6)
+    // amplitudes fall off steeply; high notes get even fewer partials
+    const partials = [1, 0.42, 0.18, 0.08, 0.035, 0.015].map((a, k) => a * (k === 0 ? 1 : Math.max(0.15, 1 - Math.max(0, rel) * 0.5)));
+    const baseDecay = 0.55 + Math.max(0, rel) * 0.9; // low notes ring longer
+    const decays = partials.map((_, k) => baseDecay * (1 + k * 1.6));
+    const detune = 1.0012; // unison string detune
     for (let i = 0; i < n; i++) {
       const t = i / sr;
       let v = 0;
       for (let k = 0; k < partials.length; k++) {
-        const fk = f0 * (k + 1) * (1 + 0.0004 * k * k);
+        const fk = f0 * (k + 1) * (1 + 0.0003 * k * k);
         if (fk > sr / 2) break;
-        v += partials[k] * Math.exp(-decays[k] * t) * Math.sin(2 * Math.PI * fk * t);
+        const env = Math.exp(-decays[k] * t);
+        if (k === 0) v += partials[0] * env * (0.6 * Math.sin(2 * Math.PI * fk * t) + 0.4 * Math.sin(2 * Math.PI * fk * detune * t + 0.3));
+        else v += partials[k] * env * Math.sin(2 * Math.PI * fk * t);
       }
-      // percussive attack: short noise-free ramp, then hammer thump via fast envelope
-      const env = t < 0.004 ? t / 0.004 : 1;
-      out[i] = v * env * 0.5;
+      // hammer: 6 ms attack, slight initial thump
+      const att = t < 0.006 ? t / 0.006 : 1;
+      out[i] = v * att * 0.55;
     }
-    const fadeStart = Math.floor(n * 0.75);
+    const fadeStart = Math.floor(n * 0.7);
     for (let i = fadeStart; i < n; i++) out[i] *= 1 - (i - fadeStart) / (n - fadeStart);
     pianoCache.set(midi, buf);
     return buf;
@@ -111,7 +124,7 @@
     src.buffer = instrument === 'piano' ? pianoBufferFor(midi) : bufferFor(midi);
     const g = c.createGain();
     g.gain.value = gain;
-    src.connect(g); g.connect(master);
+    src.connect(g); g.connect(instrument === 'piano' ? pianoBus : master);
     src.start(when);
   }
 
