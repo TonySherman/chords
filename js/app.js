@@ -358,7 +358,7 @@
         </div>
       </section>
       ${vs.length > 1 ? `<section class="section"><div class="section-head"><h2>All voicings</h2></div><div class="thumbs" id="thumbs">${vs.map((v, i) => `<button class="thumb${i === vi ? ' on' : ''}" data-i="${i}">${renderDiagram(v, dk, { size: 'sm', hideNotes: true, labels: 'none' })}<div class="lbl">${esc(voicingLabel(v))}</div></button>`).join('')}</div></section>` : ''}
-      <section class="section" id="videoSection">${piano ? pianoVideoHtml(dk, suffix) : videoHtml(video, dk, suffix)}</section>
+      ${piano ? '' : `<section class="section" id="videoSection">${videoHtml(video, dk, suffix)}</section>`}
       <section class="section"><div class="section-head"><h2>${rootHtml(dk)} chords</h2><a href="#/root/${encodeURIComponent(dk)}">See all</a></div>
         <div class="hscroll">${sufs.filter(s => s !== suffix).slice(0, 14).map(s => `<a class="chip" href="${href(dk, s)}">${symHtml(dk, s)}</a>`).join('')}</div></section>
       ${sameType.length ? `<section class="section"><div class="section-head"><h2>Other ${esc(info.name)} chords</h2>${T.TYPES[suffix] ? `<a href="#/type/${encodeURIComponent(suffix)}">See all</a>` : ''}</div>
@@ -492,16 +492,7 @@
         </div>
       </div>`;
   }
-  function pianoVideoHtml(root, suffix) {
-    const v = findVideo(root, suffix);
-    return `<div class="section-head"><h2>Lessons</h2></div>
-      <div class="video-card"><div class="video-meta"><span class="video-pill">Piano mode</span>
-        <div class="t">JustinGuitar lessons are guitar-specific, so there is no video here in piano mode.</div>
-        <div class="a">${v ? `Switch to guitar to watch “${esc(v.title)}” for this chord.` : 'Switch to guitar to see the related lesson for this chord.'} Piano voicings shown here are standard root-position and inverted shapes with suggested right-hand fingering.</div>
-        <div class="links"><button class="chip accent" id="toGuitar">${I.guitarIcon} Show on guitar</button></div></div></div>`;
-  }
   function wireVideo() {
-    const tg = $('#toGuitar'); if (tg) tg.onclick = () => setInstrument('guitar');
     const f = $('#videoFrame'); if (!f) return;
     f.querySelector('.playbtn').onclick = () => {
       const id = f.dataset.id;
