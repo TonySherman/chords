@@ -21,7 +21,7 @@
     const nFrets = Math.max(4, maxRel);
 
     // Geometry
-    const W = 200, padL = 30, padR = 30, top = 44, fretH = 34, stringGap = 28;
+    const W = 200, padL = 36, top = 44, fretH = 34, stringGap = 28;
     const H = top + fretH * nFrets + 34;
     const x0 = padL, x1 = padL + stringGap * 5;
     const xs = i => (lefty ? x1 - i * stringGap : x0 + i * stringGap); // string i (0 = low E)
@@ -36,8 +36,8 @@
       parts.push(`<rect class="cd-nut" x="${x0 - 1.5}" y="${top - 5}" width="${x1 - x0 + 3}" height="6" rx="2"/>`);
     } else {
       parts.push(`<line class="cd-fret" x1="${x0}" y1="${top}" x2="${x1}" y2="${top}"/>`);
-      const lx = lefty ? x1 + 18 : x0 - 18;
-      parts.push(`<text class="cd-basefret" x="${lx}" y="${fy(1) + 5}" text-anchor="middle">${v.b}fr</text>`);
+      const lx = lefty ? x1 + 15 : x0 - 15;
+      parts.push(`<text class="cd-basefret" x="${lx}" y="${fy(1) + 5}" text-anchor="${lefty ? 'start' : 'end'}">${v.b}fr</text>`);
     }
     // Frets
     for (let i = 1; i <= nFrets; i++) {

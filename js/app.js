@@ -328,6 +328,9 @@
           <div class="info"><div class="k">Formula</div><div class="v">${esc(info.formula)}</div></div>
           <div class="info"><div class="k">Type</div><div class="v">${esc(info.name)}</div></div>
           <div class="info" style="grid-column:1/-1"><div class="k">This voicing</div><div class="v" id="voicingNotes"></div></div>
+          <div class="info" style="grid-column:1/-1"><div class="row" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div class="k">Capo helper</div>
+            <div class="stepper" style="height:36px"><button id="capoDown" aria-label="Capo down" style="width:36px;height:36px">−</button><span id="capoVal" style="min-width:60px;font-size:13px">No capo</span><button id="capoUp" aria-label="Capo up" style="width:36px;height:36px">+</button></div></div>
+            <div class="v" id="capoText" style="font-size:15px;font-weight:500;color:var(--muted)">Add a capo to see which easier shape gives you this sound.</div></div>
         </div>
       </section>
       ${vs.length > 1 ? `<section class="section"><div class="section-head"><h2>All voicings</h2></div><div class="thumbs" id="thumbs">${vs.map((v, i) => `<button class="thumb${i === vi ? ' on' : ''}" data-i="${i}">${window.Diagram.render(v, diagramOpts(dk, { size: 'sm', hideNotes: true, labels: 'none' }))}<div class="lbl">${v.b > 1 ? v.b + 'fr' : 'Open'}</div></button>`).join('')}</div></section>` : ''}
@@ -379,6 +382,18 @@
       btn.classList.remove('playing'); void btn.offsetWidth; btn.classList.add('playing');
       haptic();
     };
+    let capo = 0;
+    const renderCapo = () => {
+      $('#capoVal').textContent = capo ? `Capo ${capo}` : 'No capo';
+      const el = $('#capoText');
+      if (!capo) { el.innerHTML = 'Add a capo to see which easier shape gives you this sound.'; return; }
+      const shapeRoot = T.DATA_KEYS[(T.pc(dk) - capo + 12) % 12];
+      const shape = chordExists(shapeRoot, suffix) ? `<a href="${href(shapeRoot, suffix)}">${symHtml(shapeRoot, suffix)}</a>` : `${symHtml(shapeRoot, suffix)}`;
+      const soundsAs = T.DATA_KEYS[(T.pc(dk) + capo) % 12];
+      el.innerHTML = `With a capo on fret ${capo}, play the <b style="color:var(--text)">${shape}</b> shape to sound ${symHtml(dk, suffix)}.<br><span style="font-size:13px">And this ${symHtml(dk, suffix)} shape with capo ${capo} sounds as ${symHtml(soundsAs, suffix)}.</span>`;
+    };
+    $('#capoDown').onclick = () => { capo = Math.max(0, capo - 1); renderCapo(); };
+    $('#capoUp').onclick = () => { capo = Math.min(9, capo + 1); renderCapo(); };
     $('#playBtn').onclick = () => play('strum');
     $('#arpBtn').onclick = () => play('arpeggio');
     $('#addProgBtn').onclick = () => { progression.push({ root: dk, suffix, vi: current }); store.set('progression', progression); toast(`Added ${T.chordSymbol(dk, suffix)} to progression`); haptic(); };
@@ -395,15 +410,19 @@
   }
 
   /* ---- video ---- */
-  const FAMILY_OF = { major: 'open', minor: 'open', '7': 'seventh', m7: 'minor7', maj7: 'major7', '5': 'power', sus2: 'sus', sus4: 'sus', '7sus4': 'sus', add9: 'add9', madd9: 'add9', '6': 'sixth', m6: 'sixth', '69': 'sixth', m69: 'sixth', dim: 'dim', dim7: 'dim', m7b5: 'dim', aug: 'aug', aug7: 'aug', aug9: 'aug', '9': 'ninth', m9: 'ninth', maj9: 'ninth', '11': 'extended', m11: 'extended', maj11: 'extended', '13': 'extended', maj13: 'extended', mmaj7: 'extended', mmaj9: 'extended', mmaj11: 'extended', '7b5': 'altered', '7b9': 'altered', '7#9': 'altered', '9b5': 'altered', '9#11': 'altered', maj7b5: 'altered', 'maj7#5': 'altered', mmaj7b5: 'altered' };
+  const OPEN_ROOTS = { major: ['C', 'D', 'E', 'G', 'A', 'F'], minor: ['A', 'E', 'D'] };
   function findVideo(root, suffix) {
     const exact = VID.chords[key(root, suffix)];
     if (exact) return Object.assign({ level: 'exact' }, exact);
-    let fam = T.isSlash(suffix) ? 'slash' : FAMILY_OF[suffix];
-    // Barre-only roots for major/minor -> barre chord lesson
-    if ((suffix === 'major' || suffix === 'minor') && !['C', 'D', 'E', 'G', 'A', 'F'].includes(root) && VID.families.barre) fam = 'barre';
-    if (fam && VID.families[fam]) return Object.assign({ level: 'family' }, VID.families[fam]);
-    if (VID.general) return Object.assign({ level: 'general' }, VID.general);
+    const fam = VID.families || {};
+    if (T.isSlash(suffix)) return fam.slash ? Object.assign({ level: 'family' }, fam.slash) : null;
+    if (suffix === 'major' || suffix === 'minor') {
+      if (OPEN_ROOTS[suffix].includes(root) && fam.open) return Object.assign({ level: 'family' }, fam.open);
+      const b = suffix === 'minor' ? (fam['barre-minor'] || fam.barre) : fam.barre;
+      if (b) return Object.assign({ level: 'family' }, b);
+    }
+    if (fam[suffix]) return Object.assign({ level: 'family' }, fam[suffix]);
+    if (fam.general) return Object.assign({ level: 'general' }, fam.general);
     return null;
   }
   function videoHtml(video, root, suffix) {
