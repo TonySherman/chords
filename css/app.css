@@ -248,12 +248,13 @@ main { flex: 1; padding: 0 16px calc(var(--nav-h) + 24px + env(safe-area-inset-b
 .fb-dot-label { fill: var(--dot-label); font-size: 12px; font-weight: 700; pointer-events: none; font-family: Inter, system-ui, sans-serif; }
 .fb-open { fill: none; stroke: var(--text); stroke-width: 2; pointer-events: none; }
 .fb-mute { stroke: var(--muted); stroke-width: 2; pointer-events: none; }
-.fb-num { fill: var(--faint); font-size: 11px; font-family: Inter, system-ui, sans-serif; }
+.fb-num { fill: var(--faint); font-size: 11px; font-family: Inter, system-ui, sans-serif; pointer-events: none; }
 .fb-inlay { fill: var(--surface-3); }
 .results { display: grid; gap: 8px; margin-top: 12px; }
 .result-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; text-align: left; }
 .result-row .sym { font-weight: 700; font-size: 20px; flex: 1; }
 .result-row .n { color: var(--muted); font-size: 13px; }
+.result-row svg { width: 20px; height: 20px; flex: none; color: var(--faint); }
 .result-row.best { border-color: var(--accent); }
 
 /* Progression */
@@ -292,6 +293,7 @@ main { flex: 1; padding: 0 16px calc(var(--nav-h) + 24px + env(safe-area-inset-b
 
 /* Install banner */
 .install { display: flex; align-items: center; gap: 12px; background: linear-gradient(135deg, var(--surface-2), var(--surface)); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-top: 18px; }
+.install > svg { width: 28px; height: 28px; flex: none; color: var(--accent); }
 .install .txt { flex: 1; font-size: 14px; }
 .install .txt b { display: block; font-size: 15px; }
 

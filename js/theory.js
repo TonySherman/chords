@@ -11,11 +11,11 @@
   // Chord-type metadata. label = short symbol appended to root; name = spoken name;
   // iv = intervals in semitones from the root; group = browse grouping; alias = extra search spellings.
   const TYPES = {
-    major: { label: '', name: 'Major', iv: [0, 4, 7], group: 'Essentials', alias: ['maj', 'major', 'M', ''] , formula: '1 3 5' },
+    major: { label: '', name: 'Major', iv: [0, 4, 7], group: 'Essentials', alias: ['maj', 'major', ''] , formula: '1 3 5' },
     minor: { label: 'm', name: 'Minor', iv: [0, 3, 7], group: 'Essentials', alias: ['m', 'min', 'minor', '-'], formula: '1 ♭3 5' },
     '7': { label: '7', name: 'Dominant 7th', iv: [0, 4, 7, 10], group: 'Essentials', alias: ['7', 'dom7', 'dominant7', 'seven', 'seventh'], formula: '1 3 5 ♭7' },
     m7: { label: 'm7', name: 'Minor 7th', iv: [0, 3, 7, 10], group: 'Essentials', alias: ['m7', 'min7', 'minor7', '-7', 'mi7'], formula: '1 ♭3 5 ♭7' },
-    maj7: { label: 'maj7', name: 'Major 7th', iv: [0, 4, 7, 11], group: 'Essentials', alias: ['maj7', 'major7', 'M7', 'Δ', 'Δ7', 'ma7'], formula: '1 3 5 7' },
+    maj7: { label: 'maj7', name: 'Major 7th', iv: [0, 4, 7, 11], group: 'Essentials', alias: ['maj7', 'major7', 'Δ', 'Δ7', 'ma7'], formula: '1 3 5 7' },
     '5': { label: '5', name: 'Power chord', iv: [0, 7], group: 'Essentials', alias: ['5', 'power', 'powerchord', 'no3'], formula: '1 5' },
     sus2: { label: 'sus2', name: 'Suspended 2nd', iv: [0, 2, 7], group: 'Suspended & add', alias: ['sus2', 'suspended2', '2'], formula: '1 2 5' },
     sus4: { label: 'sus4', name: 'Suspended 4th', iv: [0, 5, 7], group: 'Suspended & add', alias: ['sus4', 'sus', 'suspended4', 'suspended', '4'], formula: '1 4 5' },
@@ -34,25 +34,26 @@
     aug9: { label: 'aug9', name: 'Augmented 9th', iv: [0, 4, 8, 10, 14], group: 'Diminished & augmented', alias: ['aug9', '9#5', '9+', '+9', '9♯5'], formula: '1 3 ♯5 ♭7 9' },
     '9': { label: '9', name: 'Dominant 9th', iv: [0, 4, 7, 10, 14], group: 'Extended', alias: ['9', 'dom9', 'ninth'], formula: '1 3 5 ♭7 9' },
     m9: { label: 'm9', name: 'Minor 9th', iv: [0, 3, 7, 10, 14], group: 'Extended', alias: ['m9', 'min9', 'minor9', '-9'], formula: '1 ♭3 5 ♭7 9' },
-    maj9: { label: 'maj9', name: 'Major 9th', iv: [0, 4, 7, 11, 14], group: 'Extended', alias: ['maj9', 'major9', 'M9', 'Δ9'], formula: '1 3 5 7 9' },
+    maj9: { label: 'maj9', name: 'Major 9th', iv: [0, 4, 7, 11, 14], group: 'Extended', alias: ['maj9', 'major9', 'Δ9'], formula: '1 3 5 7 9' },
     '11': { label: '11', name: 'Dominant 11th', iv: [0, 4, 7, 10, 14, 17], group: 'Extended', alias: ['11', 'dom11', 'eleventh'], formula: '1 3 5 ♭7 9 11' },
     m11: { label: 'm11', name: 'Minor 11th', iv: [0, 3, 7, 10, 14, 17], group: 'Extended', alias: ['m11', 'min11', 'minor11', '-11'], formula: '1 ♭3 5 ♭7 9 11' },
-    maj11: { label: 'maj11', name: 'Major 11th', iv: [0, 4, 7, 11, 14, 17], group: 'Extended', alias: ['maj11', 'major11', 'M11'], formula: '1 3 5 7 9 11' },
+    maj11: { label: 'maj11', name: 'Major 11th', iv: [0, 4, 7, 11, 14, 17], group: 'Extended', alias: ['maj11', 'major11'], formula: '1 3 5 7 9 11' },
     '13': { label: '13', name: 'Dominant 13th', iv: [0, 4, 7, 10, 14, 21], group: 'Extended', alias: ['13', 'dom13', 'thirteenth'], formula: '1 3 5 ♭7 9 13' },
-    maj13: { label: 'maj13', name: 'Major 13th', iv: [0, 4, 7, 11, 14, 21], group: 'Extended', alias: ['maj13', 'major13', 'M13'], formula: '1 3 5 7 9 13' },
-    mmaj7: { label: 'm(maj7)', name: 'Minor-major 7th', iv: [0, 3, 7, 11], group: 'Extended', alias: ['mmaj7', 'm(maj7)', 'minmaj7', 'mM7', '-Δ7', 'mmajor7'], formula: '1 ♭3 5 7' },
-    mmaj9: { label: 'm(maj9)', name: 'Minor-major 9th', iv: [0, 3, 7, 11, 14], group: 'Extended', alias: ['mmaj9', 'm(maj9)', 'minmaj9', 'mM9'], formula: '1 ♭3 5 7 9' },
-    mmaj11: { label: 'm(maj11)', name: 'Minor-major 11th', iv: [0, 3, 7, 11, 14, 17], group: 'Extended', alias: ['mmaj11', 'm(maj11)', 'minmaj11', 'mM11'], formula: '1 ♭3 5 7 9 11' },
+    maj13: { label: 'maj13', name: 'Major 13th', iv: [0, 4, 7, 11, 14, 21], group: 'Extended', alias: ['maj13', 'major13'], formula: '1 3 5 7 9 13' },
+    mmaj7: { label: 'm(maj7)', name: 'Minor-major 7th', iv: [0, 3, 7, 11], group: 'Extended', alias: ['mmaj7', 'm(maj7)', 'minmaj7', '-Δ7', 'mmajor7'], formula: '1 ♭3 5 7' },
+    mmaj9: { label: 'm(maj9)', name: 'Minor-major 9th', iv: [0, 3, 7, 11, 14], group: 'Extended', alias: ['mmaj9', 'm(maj9)', 'minmaj9'], formula: '1 ♭3 5 7 9' },
+    mmaj11: { label: 'm(maj11)', name: 'Minor-major 11th', iv: [0, 3, 7, 11, 14, 17], group: 'Extended', alias: ['mmaj11', 'm(maj11)', 'minmaj11'], formula: '1 ♭3 5 7 9 11' },
     '7b5': { label: '7♭5', name: 'Dominant 7th flat 5', iv: [0, 4, 6, 10], group: 'Altered', alias: ['7b5', '7♭5', '7-5', 'dom7b5'], formula: '1 3 ♭5 ♭7' },
     '7b9': { label: '7♭9', name: 'Dominant 7th flat 9', iv: [0, 4, 7, 10, 13], group: 'Altered', alias: ['7b9', '7♭9', '7-9'], formula: '1 3 5 ♭7 ♭9' },
     '7#9': { label: '7♯9', name: 'Dominant 7th sharp 9 (Hendrix chord)', iv: [0, 4, 7, 10, 15], group: 'Altered', alias: ['7#9', '7♯9', '7+9', 'hendrix'], formula: '1 3 5 ♭7 ♯9' },
     '9b5': { label: '9♭5', name: 'Dominant 9th flat 5', iv: [0, 4, 6, 10, 14], group: 'Altered', alias: ['9b5', '9♭5', '9-5'], formula: '1 3 ♭5 ♭7 9' },
     '9#11': { label: '9♯11', name: 'Dominant 9th sharp 11', iv: [0, 4, 7, 10, 14, 18], group: 'Altered', alias: ['9#11', '9♯11', '9+11'], formula: '1 3 5 ♭7 9 ♯11' },
-    maj7b5: { label: 'maj7♭5', name: 'Major 7th flat 5', iv: [0, 4, 6, 11], group: 'Altered', alias: ['maj7b5', 'maj7♭5', 'M7b5'], formula: '1 3 ♭5 7' },
-    'maj7#5': { label: 'maj7♯5', name: 'Major 7th sharp 5', iv: [0, 4, 8, 11], group: 'Altered', alias: ['maj7#5', 'maj7♯5', 'maj7+5', 'M7#5', 'augmaj7'], formula: '1 3 ♯5 7' },
+    maj7b5: { label: 'maj7♭5', name: 'Major 7th flat 5', iv: [0, 4, 6, 11], group: 'Altered', alias: ['maj7b5', 'maj7♭5'], formula: '1 3 ♭5 7' },
+    'maj7#5': { label: 'maj7♯5', name: 'Major 7th sharp 5', iv: [0, 4, 8, 11], group: 'Altered', alias: ['maj7#5', 'maj7♯5', 'maj7+5', 'augmaj7'], formula: '1 3 ♯5 7' },
     mmaj7b5: { label: 'm(maj7)♭5', name: 'Minor-major 7th flat 5', iv: [0, 3, 6, 11], group: 'Altered', alias: ['mmaj7b5', 'm(maj7)b5', 'minmaj7b5'], formula: '1 ♭3 ♭5 7' },
   };
 
+  const TYPE_ORDER = ['major', 'minor', '7', 'm7', 'maj7', '5', 'sus2', 'sus4', '7sus4', 'add9', 'madd9', '6', 'm6', '69', 'm69', 'dim', 'dim7', 'm7b5', 'aug', 'aug7', 'aug9', '9', 'm9', 'maj9', '11', 'm11', 'maj11', '13', 'maj13', 'mmaj7', 'mmaj9', 'mmaj11', '7b5', '7b9', '7#9', '9b5', '9#11', 'maj7b5', 'maj7#5', 'mmaj7b5'];
   const GROUP_ORDER = ['Essentials', 'Suspended & add', 'Sixths', 'Diminished & augmented', 'Extended', 'Altered', 'Slash chords'];
   const GROUP_BLURB = {
     'Essentials': 'The chords every guitarist learns first.',
@@ -174,5 +175,5 @@
     return results;
   }
 
-  window.Theory = { SHARPS, FLATS, DATA_KEYS, PC, OPEN_MIDI, STRING_NAMES, TYPES, GROUP_ORDER, GROUP_BLURB, typeInfo, isSlash, parseSlash, pc, noteName, prefersFlats, chordNotes, chordSymbol, chordLongName, absFrets, voicingMidi, voicingNoteNames, voicingTags, toDataKey, identify, ordinal };
+  window.Theory = { TYPE_ORDER, SHARPS, FLATS, DATA_KEYS, PC, OPEN_MIDI, STRING_NAMES, TYPES, GROUP_ORDER, GROUP_BLURB, typeInfo, isSlash, parseSlash, pc, noteName, prefersFlats, chordNotes, chordSymbol, chordLongName, absFrets, voicingMidi, voicingNoteNames, voicingTags, toDataKey, identify, ordinal };
 })();

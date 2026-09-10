@@ -50,7 +50,7 @@
   function chordExists(r, s) { return voicings(r, s).length > 0; }
   function suffixesFor(root) {
     const all = Object.keys(DATA[root] || {});
-    const order = Object.keys(T.TYPES);
+    const order = T.TYPE_ORDER;
     return all.sort((a, b) => {
       const ia = order.indexOf(a), ib = order.indexOf(b);
       const ga = T.GROUP_ORDER.indexOf(T.typeInfo(a).group), gb = T.GROUP_ORDER.indexOf(T.typeInfo(b).group);
@@ -154,7 +154,7 @@
     }
     if (!results.length) {
       // No root: match type name across all roots
-      for (const sf in T.TYPES) {
+      for (const sf of T.TYPE_ORDER) {
         const info = T.TYPES[sf];
         const names = info.alias.map(norm).concat([norm(info.label), norm(info.name), norm(sf)]);
         let sc = 0;
@@ -218,7 +218,7 @@
         <div class="chips" style="margin-top:10px">${COMMON.slice(12).map(([r, s]) => `<a class="chip" href="${href(r, s)}">${symHtml(r, s)}</a>`).join('')}</div></section>
       <section class="section"><div class="section-head"><h2>Browse by type</h2></div>
         <div class="type-list">${T.GROUP_ORDER.map(g => {
-          const types = Object.keys(T.TYPES).filter(s => T.TYPES[s].group === g);
+          const types = T.TYPE_ORDER.filter(s => T.TYPES[s].group === g);
           if (g === 'Slash chords') return `<a class="type-row" href="#/type/slash"><span class="sym">C/E</span><span class="desc"><b>${g}</b>${T.GROUP_BLURB[g]}</span>${I.chev}</a>`;
           return `<div class="section" style="margin-top:8px"><div class="blurb"><b style="color:var(--text)">${g}</b> · ${T.GROUP_BLURB[g]}</div>
             <div class="chips">${types.map(s => `<a class="chip" href="#/type/${encodeURIComponent(s)}">${T.TYPES[s].label ? esc(T.TYPES[s].label) : 'Major'}<span class="sub">${esc(T.TYPES[s].name.replace(/\s*\(.*\)/, ''))}</span></a>`).join('')}</div></div>`;
@@ -260,7 +260,7 @@
       <div class="back-row"><button id="back">${I.back}Home</button></div>
       <div class="detail-head"><div><h1 class="chord-title display" style="font-size:clamp(34px,9vw,48px)">${isSlash ? 'Slash chords' : esc(info.name)}</h1>
       <div class="detail-sub">${isSlash ? T.GROUP_BLURB['Slash chords'] : `Formula: ${esc(info.formula)} · ${esc(info.group)}`}</div></div></div>
-      ${isSlash ? '' : `<div class="hscroll" style="margin-top:12px">${Object.keys(T.TYPES).filter(s => T.TYPES[s].group === info.group).map(s => `<a class="chip${s === suffix ? ' selected' : ''}" href="#/type/${encodeURIComponent(s)}">${T.TYPES[s].label ? esc(T.TYPES[s].label) : 'Major'}</a>`).join('')}</div>`}
+      ${isSlash ? '' : `<div class="hscroll" style="margin-top:12px">${T.TYPE_ORDER.filter(s => T.TYPES[s].group === info.group).map(s => `<a class="chip${s === suffix ? ' selected' : ''}" href="#/type/${encodeURIComponent(s)}">${T.TYPES[s].label ? esc(T.TYPES[s].label) : 'Major'}</a>`).join('')}</div>`}
       <section class="section"><div class="card-grid">${cards.join('')}</div></section>
     </div>`;
     $('#back').onclick = () => navigate('#/');
@@ -527,7 +527,7 @@
   }
   function finderMidi() { return finderState.frets.map((f, i) => (f < 0 ? null : T.OPEN_MIDI[i] + f)); }
   function drawFretboard() {
-    const NF = 12, cellW = 46, cellH = 30, left = 70, top = 16;
+    const NF = 12, cellW = 46, cellH = 30, left = 100, top = 16;
     const W = left + cellW * NF + 14, H = top + cellH * 6 + 22;
     const lefty = settings.lefty;
     const sy = i => top + cellH * (lefty ? i : 5 - i) + cellH / 2; // string i (0 = low E) - low E at bottom for right-handed
@@ -543,14 +543,14 @@
     for (let i = 0; i < 6; i++) {
       const y = sy(i); const cur = finderState.frets[i];
       // mute toggle and open toggle
-      s += `<g class="fb-cell" data-s="${i}" data-f="-1"><rect x="0" y="${y - cellH / 2}" width="26" height="${cellH}" class="fb-cell"/><g class="fb-mute" transform="translate(13 ${y})" opacity="${cur === -1 ? 1 : 0.35}"><line x1="-5" y1="-5" x2="5" y2="5"/><line x1="5" y1="-5" x2="-5" y2="5"/></g></g>`;
-      s += `<g class="fb-cell" data-s="${i}" data-f="0"><rect x="30" y="${y - cellH / 2}" width="34" height="${cellH}" class="fb-cell"/><circle class="fb-open" cx="47" cy="${y}" r="7" opacity="${cur === 0 ? 1 : 0.35}"/>${cur === 0 ? `<circle class="fb-dot" cx="47" cy="${y}" r="7"/>` : ''}</g>`;
+      s += `<g class="fb-cell" data-s="${i}" data-f="-1"><rect x="24" y="${y - cellH / 2}" width="28" height="${cellH}" class="fb-cell"/><g class="fb-mute" transform="translate(38 ${y})" opacity="${cur === -1 ? 1 : 0.35}"><line x1="-5" y1="-5" x2="5" y2="5"/><line x1="5" y1="-5" x2="-5" y2="5"/></g></g>`;
+      s += `<g class="fb-cell" data-s="${i}" data-f="0"><rect x="56" y="${y - cellH / 2}" width="36" height="${cellH}" class="fb-cell"/><circle class="fb-open" cx="74" cy="${y}" r="7" opacity="${cur === 0 ? 1 : 0.35}"/>${cur === 0 ? `<circle class="fb-dot" cx="74" cy="${y}" r="7"/>` : ''}</g>`;
       for (let f = 1; f <= NF; f++) {
         const x = left + cellW * (f - 0.5);
         s += `<rect class="fb-cell" data-s="${i}" data-f="${f}" x="${left + cellW * (f - 1)}" y="${y - cellH / 2}" width="${cellW}" height="${cellH}"/>`;
         if (cur === f) s += `<circle class="fb-dot" cx="${x}" cy="${y}" r="11"/><text class="fb-dot-label" x="${x}" y="${y + 4}" text-anchor="middle">${T.noteName(T.OPEN_MIDI[i] + f, false)}</text>`;
       }
-      s += `<text class="fb-num" x="${left - 14}" y="${y + 4}" text-anchor="end" style="font-weight:700">${T.STRING_NAMES[i]}</text>`;
+      s += `<text class="fb-num" x="12" y="${y + 4}" text-anchor="middle" style="font-weight:700;pointer-events:none">${T.STRING_NAMES[i]}</text>`;
     }
     s += '</svg>';
     const wrap = $('#fbWrap'); wrap.innerHTML = s;

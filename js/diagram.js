@@ -36,7 +36,7 @@
       parts.push(`<rect class="cd-nut" x="${x0 - 1.5}" y="${top - 5}" width="${x1 - x0 + 3}" height="6" rx="2"/>`);
     } else {
       parts.push(`<line class="cd-fret" x1="${x0}" y1="${top}" x2="${x1}" y2="${top}"/>`);
-      const lx = lefty ? x1 + 14 : x0 - 14;
+      const lx = lefty ? x1 + 18 : x0 - 18;
       parts.push(`<text class="cd-basefret" x="${lx}" y="${fy(1) + 5}" text-anchor="middle">${v.b}fr</text>`);
     }
     // Frets
