@@ -93,9 +93,9 @@ window.VIDEOS = {
    "short": true
   },
   "G|7": {
-   "id": "xWkXb8jt82g",
-   "title": "G7, C7, B7 Chords (Guitar Lesson BC-141) Guitar for beginners Stage 4",
-   "short": false
+   "id": "K7cVhNzxCnM",
+   "title": "Learn the G7 chord on guitar! #Shorts",
+   "short": true
   },
   "G|sus4": {
    "id": "F_UGibSn4_s",
@@ -103,9 +103,9 @@ window.VIDEOS = {
    "short": true
   },
   "A|major": {
-   "id": "1X2rW5ATdLQ",
-   "title": "How to Play the A Chord | Guitar for Beginners",
-   "short": false
+   "id": "SIxHT-dNRvI",
+   "title": "How to play the A Chord on Guitar (it's so easy!) #Shorts",
+   "short": true
   },
   "A|minor": {
    "id": "I-PEqBBO1JI",
@@ -135,6 +135,31 @@ window.VIDEOS = {
   "B|7": {
    "id": "fAJB790oEF0",
    "title": "How to play the B7 chord on guitar! #Shorts",
+   "short": true
+  },
+  "B|11": {
+   "id": "P1ipmWdEbEs",
+   "title": "Chord Of The Day | How To Play B11 on Guitar #Shorts",
+   "short": true
+  },
+  "G|/B": {
+   "id": "Bm6QLOwxJ_Y",
+   "title": "Chord Of The Day | How To Play G/B on Guitar #Shorts",
+   "short": true
+  },
+  "F|/A": {
+   "id": "oYhLXs7rU5w",
+   "title": "How to Play F/A Chord on Guitar #Shorts",
+   "short": true
+  },
+  "F|maj9": {
+   "id": "lrsQ_QhTDXw",
+   "title": "Chord Of The Day | How To Play FMaj9 on Guitar #Shorts",
+   "short": true
+  },
+  "E|add9": {
+   "id": "CLKmZZ8uPxI",
+   "title": "How to play the E add9 on Guitar (upgrade your standard E chord!) #Shorts",
    "short": true
   },
   "F|maj7": {

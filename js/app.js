@@ -208,7 +208,7 @@
     const recentHtml = recents.length ? `<section class="section"><div class="section-head"><h2>Recently viewed</h2><button class="link" id="clearRecents">Clear</button></div>
       <div class="hscroll">${recents.map(k => { const [r, s] = k.split('|'); return `<a class="chip" href="${href(r, s)}">${symHtml(r, s)}</a>`; }).join('')}</div></section>` : '';
     main.innerHTML = `<div class="view">
-      <div class="hero"><h1 class="display">Chord<span>book</span></h1><p>Every guitar chord, every variation. Tap a root note or search above.</p></div>
+      <div class="hero home"><h1 class="display">Chord<span>book</span></h1><p>Every guitar chord, every variation. Tap a root note or search above.</p></div>
       <div id="installSlot"></div>
       ${recentHtml}
       <section class="section"><div class="section-head"><h2>Pick a root</h2></div>
@@ -397,6 +397,14 @@
     $('#playBtn').onclick = () => play('strum');
     $('#arpBtn').onclick = () => play('arpeggio');
     $('#addProgBtn').onclick = () => { progression.push({ root: dk, suffix, vi: current }); store.set('progression', progression); toast(`Added ${T.chordSymbol(dk, suffix)} to progression`); haptic(); };
+    // Keyboard: arrows switch voicings, space plays
+    const onKey = e => {
+      if (!document.getElementById('chordView') || e.target.tagName === 'INPUT') { if (!document.getElementById('chordView')) window.removeEventListener('keydown', onKey); return; }
+      if (e.key === 'ArrowRight' && current < vs.length - 1) scrollTo(current + 1);
+      else if (e.key === 'ArrowLeft' && current > 0) scrollTo(current - 1);
+      else if (e.key === ' ') { e.preventDefault(); play('strum'); }
+    };
+    window.addEventListener('keydown', onKey);
     // Tap the diagram to hear it
     cards.forEach((c, i) => c.querySelector('svg').addEventListener('click', () => { if (i === current) play('strum'); }));
     wireVideo();

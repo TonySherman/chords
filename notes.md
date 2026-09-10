@@ -22,3 +22,11 @@ Working log for the guitar chord chart PWA. Newest entries at the bottom.
 - Tested with Playwright at iPhone size (390×844) in light and dark; fixed: finder tap targets overlapped by string labels, oversized SVG icons in banner/results, chord-type ordering (numeric object keys sort first in JS, so an explicit `TYPE_ORDER` was needed), and a search bug where the "M" alias for major collided with "m" for minor.
 - Image generation: decided against gpt-image-2 for now — SVG diagrams/icons are crisper, themeable and offline-friendly. May revisit for decorative art if time allows.
 - **Videos**: research script scraped YouTube search results for "justinguitar <chord>" (192 chord queries + ~30 family queries), then verifies each candidate's channel via YouTube's oEmbed endpoint so only genuine JustinGuitar videos are used. Shorts are preferred over full lessons when both exist. Results land in `data/videos.js` (next commit).
+
+## 2026-09-10 — Videos, capo helper, hero art
+- **Video verification**: the first pass only checked the top 6 candidates per chord and mis-credited slash-chord Shorts ("D/A", "G/F#") to plain A and F# major. Fixed the title matcher to reject a root preceded/followed by "/" and ran a second pass that oEmbed-verifies *every* Short whose title looks like a chord lesson (728 videos). Only ids whose oEmbed `author_name` is "JustinGuitar" are used.
+- Result: ~35 chord-specific JustinGuitar videos (almost all Shorts) plus hand-curated full lessons where no Short exists (Fmaj7, G7/C7/B7, sus chords, Dm, A, Em, …) and per-type fallbacks (barre chords for non-open majors/minors, 7th grips, jazz extensions, altered chords, slash chords, power chords, CAGED as the last resort). The card labels which level applies ("This chord" vs "Related lesson").
+- **Capo helper** on the chord page: pick a capo fret and see which easier shape produces the chord, and what the current shape sounds like with that capo.
+- **Keyboard**: ← → switch voicings, space strums (desktop nicety).
+- **Image generation**: used gpt-image-2 once for a decorative sunburst acoustic guitar on the home hero (transparent WebP, downscaled in Chromium to 640px / 42 KB). Everything functional stays SVG.
+- README added. Service-worker cache bumped to `cb-v2` so installed copies refresh.

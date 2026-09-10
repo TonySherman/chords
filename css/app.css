@@ -79,7 +79,11 @@ main { flex: 1; padding: 0 16px calc(var(--nav-h) + 24px + env(safe-area-inset-b
 .blurb { color: var(--muted); font-size: 14px; margin: -4px 0 12px; }
 
 /* Hero (home) */
-.hero { padding: 18px 0 6px; }
+.hero { padding: 18px 0 6px; position: relative; }
+.hero.home { min-height: 150px; padding-right: 156px; }
+.hero.home::after { content: ''; position: absolute; right: -66px; top: -24px; width: 220px; height: 220px; background: url('../assets/hero-guitar.webp') center / contain no-repeat; opacity: .92; pointer-events: none; filter: drop-shadow(0 12px 24px rgba(0,0,0,.35)); transform: rotate(8deg); }
+:root[data-theme="light"] .hero.home::after { filter: drop-shadow(0 12px 24px rgba(120,70,20,.25)); }
+@media (min-width: 640px) { .hero.home::after { right: 0; width: 260px; height: 260px; } .hero.home { padding-right: 240px; } }
 .hero h1 { font-size: clamp(34px, 9vw, 46px); line-height: 1.02; }
 .hero h1 span { color: var(--accent); }
 .hero p { color: var(--muted); margin: 8px 0 0; font-size: 16px; }
