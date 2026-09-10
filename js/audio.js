@@ -75,10 +75,40 @@
     return buf;
   }
 
-  function pluck(midi, when, gain = 1) {
+  // Simple additive piano-like tone rendered into a buffer (cached per pitch)
+  const pianoCache = new Map();
+  function pianoBufferFor(midi) {
+    if (pianoCache.has(midi)) return pianoCache.get(midi);
+    const c = ensure();
+    const sr = c.sampleRate, dur = 2.8, n = Math.floor(sr * dur);
+    const buf = c.createBuffer(1, n, sr);
+    const out = buf.getChannelData(0);
+    const f0 = midiToFreq(midi);
+    // harmonic amplitudes and decay rates (higher partials die faster); slight inharmonicity
+    const partials = [1, 0.5, 0.33, 0.2, 0.12, 0.08, 0.05];
+    const decays = [1.6, 2.4, 3.2, 4.5, 6, 8, 10].map(d => d * (1 + (midi - 60) / 40));
+    for (let i = 0; i < n; i++) {
+      const t = i / sr;
+      let v = 0;
+      for (let k = 0; k < partials.length; k++) {
+        const fk = f0 * (k + 1) * (1 + 0.0004 * k * k);
+        if (fk > sr / 2) break;
+        v += partials[k] * Math.exp(-decays[k] * t) * Math.sin(2 * Math.PI * fk * t);
+      }
+      // percussive attack: short noise-free ramp, then hammer thump via fast envelope
+      const env = t < 0.004 ? t / 0.004 : 1;
+      out[i] = v * env * 0.5;
+    }
+    const fadeStart = Math.floor(n * 0.75);
+    for (let i = fadeStart; i < n; i++) out[i] *= 1 - (i - fadeStart) / (n - fadeStart);
+    pianoCache.set(midi, buf);
+    return buf;
+  }
+
+  function pluck(midi, when, gain = 1, instrument = 'guitar') {
     const c = ensure();
     const src = c.createBufferSource();
-    src.buffer = bufferFor(midi);
+    src.buffer = instrument === 'piano' ? pianoBufferFor(midi) : bufferFor(midi);
     const g = c.createGain();
     g.gain.value = gain;
     src.connect(g); g.connect(master);
@@ -86,27 +116,27 @@
   }
 
   /** Strum a set of midi notes (low->high). mode: 'strum' | 'arpeggio' | 'down' */
-  function play(midis, mode = 'strum') {
+  function play(midis, mode = 'strum', instrument = 'guitar') {
     const c = ensure();
     const notes = midis.filter(m => m != null);
     const t0 = c.currentTime + 0.02;
-    const gap = mode === 'arpeggio' ? 0.28 : 0.035;
+    const gap = mode === 'arpeggio' ? 0.28 : instrument === 'piano' ? 0.012 : 0.035;
     notes.forEach((m, i) => {
       // lower strings a touch louder for body
       const gain = 0.9 - (i / Math.max(1, notes.length - 1)) * 0.25;
-      pluck(m, t0 + i * gap, gain);
+      pluck(m, t0 + i * gap, gain, instrument);
     });
     return notes.length * gap + 1.5;
   }
 
   /** Play a sequence of chords (array of midi arrays) at an interval in seconds */
-  function playSequence(list, interval = 1.2, onStep) {
+  function playSequence(list, interval = 1.2, onStep, instrument = 'guitar') {
     const c = ensure();
     let i = 0;
     const timers = [];
     const step = () => {
       if (i >= list.length) return;
-      play(list[i], 'strum');
+      play(list[i], 'strum', instrument);
       if (onStep) onStep(i);
       i++;
       if (i < list.length) timers.push(setTimeout(step, interval * 1000));

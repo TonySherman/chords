@@ -12,7 +12,7 @@
     get(k, d) { try { const v = localStorage.getItem('cb.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem('cb.' + k, JSON.stringify(v)); } catch (e) { /* ignore */ } },
   };
-  const settings = Object.assign({ theme: 'auto', lefty: false, labels: 'fingers', sound: true, flats: 'auto' }, store.get('settings', {}));
+  const settings = Object.assign({ theme: 'auto', lefty: false, labels: 'fingers', sound: true, flats: 'auto', instrument: 'guitar' }, store.get('settings', {}));
   let favorites = store.get('favorites', []);
   let recents = store.get('recents', []);
   let progression = store.get('progression', []);
@@ -33,6 +33,8 @@
     ext: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>',
     yt: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 6.5v11l9-5.5-9-5.5Z"/></svg>',
     download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>',
+    piano: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v8M12 5v8M16 5v8"/><path d="M6.5 13H9.5M10.5 13h3M14.5 13h3"/></svg>',
+    guitarIcon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 4-6 6"/><path d="M9 11a5 5 0 0 0-5 5c0 2.5 2 4 4.5 4a5 5 0 0 0 3.5-1.5c1-1 1-2.5 2.5-3.5s2.5-1.5 2.5-3-1-3-3-3-3 2-3.5 3"/></svg>',
     guitar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m20 4-6 6"/><path d="M9 11a5 5 0 0 0-5 5c0 2.5 2 4 4.5 4a5 5 0 0 0 3.5-1.5c1-1 1-2.5 2.5-3.5s2.5-1.5 2.5-3-1-3-3-3-3 2-3.5 3"/></svg>',
   };
 
@@ -47,6 +49,23 @@
     clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1800);
   }
   function voicings(r, s) { return (DATA[r] && DATA[r][s]) || []; }
+  const isPiano = () => settings.instrument === 'piano';
+  const pianoCache = new Map();
+  function pianoVoicings(r, s) { const k = key(r, s); if (!pianoCache.has(k)) pianoCache.set(k, window.Piano.voicings(r, s)); return pianoCache.get(k); }
+  /** Voicings for the active instrument (guitar shapes or piano inversions) */
+  function voicingsFor(r, s) { return isPiano() ? (chordExists(r, s) ? pianoVoicings(r, s) : []) : voicings(r, s); }
+  function midiOf(v) { return isPiano() ? v.midi : T.voicingMidi(v); }
+  function renderDiagram(v, r, extra = {}) {
+    return isPiano() ? window.Piano.render(v, Object.assign({ labels: settings.labels, root: r }, extra)) : window.Diagram.render(v, diagramOpts(r, extra));
+  }
+  function voicingLabel(v) { return isPiano() ? v.short : (v.b > 1 ? v.b + 'fr' : 'Open'); }
+  function setInstrument(inst) {
+    if (settings.instrument === inst) return;
+    settings.instrument = inst; saveSettings(); updateInstToggle();
+    route(true);
+    toast(inst === 'piano' ? 'Piano mode' : 'Guitar mode');
+  }
+  function updateInstToggle() { $$('#instToggle button').forEach(b => b.classList.toggle('on', b.dataset.inst === settings.instrument)); }
   function chordExists(r, s) { return voicings(r, s).length > 0; }
   function suffixesFor(root) {
     const all = Object.keys(DATA[root] || {});
@@ -63,12 +82,13 @@
     return Object.assign({ lefty: settings.lefty, labels: settings.labels, root }, extra);
   }
   function cardHtml(r, s, opts = {}) {
-    const v = voicings(r, s)[opts.vi || 0];
+    const all = voicingsFor(r, s);
+    const v = all[Math.min(opts.vi || 0, all.length - 1)];
     if (!v) return '';
     const info = T.typeInfo(s);
     return `<a class="chord-card${opts.selected ? ' selected' : ''}" href="${href(r, s, opts.vi)}" data-key="${esc(key(r, s))}">
       ${opts.badge ? `<span class="badge">${esc(opts.badge)}</span>` : ''}
-      ${window.Diagram.render(v, diagramOpts(r, { size: 'sm', title: T.chordLongName(r, s), hideNotes: true }))}
+      ${renderDiagram(v, r, { size: 'sm', title: T.chordLongName(r, s), hideNotes: true })}
       <div class="name">${symHtml(r, s)}</div>
       <div class="meta">${esc(opts.meta != null ? opts.meta : info.name)}</div></a>`;
   }
@@ -176,10 +196,12 @@
   }
   let currentPath = null;
   function navigate(hash) { location.hash = hash; }
-  function route() {
+  function route(force) {
     const { parts, params, path } = parseHash();
     const view = parts[0] || 'home';
-    const samePath = currentPath === path;
+    const samePath = currentPath === path && !force;
+    const inst = params.get('i');
+    if ((inst === 'piano' || inst === 'guitar') && inst !== settings.instrument) { settings.instrument = inst; saveSettings(); updateInstToggle(); }
     currentPath = path;
     // nav highlighting
     const navKey = view === 'chord' || view === 'root' || view === 'type' || view === 'search' ? 'home' : view;
@@ -208,7 +230,7 @@
     const recentHtml = recents.length ? `<section class="section"><div class="section-head"><h2>Recently viewed</h2><button class="link" id="clearRecents">Clear</button></div>
       <div class="hscroll">${recents.map(k => { const [r, s] = k.split('|'); return `<a class="chip" href="${href(r, s)}">${symHtml(r, s)}</a>`; }).join('')}</div></section>` : '';
     main.innerHTML = `<div class="view">
-      <div class="hero home"><h1 class="display">Chord<span>book</span></h1><p>Every guitar chord, every variation. Tap a root note or search above.</p></div>
+      <div class="hero home${isPiano() ? ' piano' : ''}"><h1 class="display">Chord<span>book</span></h1><p>Every ${isPiano() ? 'piano' : 'guitar'} chord, every ${isPiano() ? 'inversion' : 'variation'}. Tap a root note or search above.</p></div>
       <div id="installSlot"></div>
       ${recentHtml}
       <section class="section"><div class="section-head"><h2>Pick a root</h2></div>
@@ -292,7 +314,8 @@
   let playingTimer = null;
   function renderChord(root, suffix, vi) {
     const dk = T.toDataKey(root) || root;
-    const vs = voicings(dk, suffix);
+    const vs = voicingsFor(dk, suffix);
+    const piano = isPiano();
     if (!vs.length) { main.innerHTML = `<div class="view"><div class="empty">${I.guitar}<b>Chord not found</b><a href="#/">Back to the library</a></div></div>`; return; }
     if (!(vi >= 0 && vi < vs.length)) vi = 0;
     pushRecent(dk, suffix);
@@ -313,8 +336,9 @@
         </div>
       </div>
       <div class="carousel" id="carousel">${vs.map((v, i) => `<div class="voicing-card" data-i="${i}">
-          <div class="voicing-top"><span class="idx">Voicing ${i + 1} of ${vs.length}</span><span class="tags">${T.voicingTags(v).map(t => `<span class="tag${t === 'Open' || t === 'Easy' ? ' accent' : ''}">${esc(t)}</span>`).join('')}</span></div>
-          ${window.Diagram.render(v, diagramOpts(dk, { title: T.chordLongName(dk, suffix) + ' voicing ' + (i + 1) }))}
+          <div class="voicing-top"><span class="idx">${piano ? esc(v.name) : `Voicing ${i + 1} of ${vs.length}`}</span><span class="tags">${piano ? (i === 0 ? '<span class="tag accent">Start here</span>' : v.lh && v.lh.length ? '<span class="tag">Left hand</span>' : '') : T.voicingTags(v).map(t => `<span class="tag${t === 'Open' || t === 'Easy' ? ' accent' : ''}">${esc(t)}</span>`).join('')}</span></div>
+          ${renderDiagram(v, dk, { title: T.chordLongName(dk, suffix) + ' voicing ' + (i + 1) })}
+          ${piano && v.lh && v.lh.length ? '<div class="hand-legend"><span><i style="background:color-mix(in srgb, var(--accent) 55%, #fbf7f0)"></i>Left hand</span><span><i style="background:var(--accent)"></i>Right hand</span></div>' : ''}
         </div>`).join('')}</div>
       <div class="dots" id="dots">${vs.map((_, i) => `<button aria-label="Voicing ${i + 1}" data-i="${i}" class="${i === vi ? 'on' : ''}"></button>`).join('')}</div>
       <div class="play-row">
@@ -328,13 +352,13 @@
           <div class="info"><div class="k">Formula</div><div class="v">${esc(info.formula)}</div></div>
           <div class="info"><div class="k">Type</div><div class="v">${esc(info.name)}</div></div>
           <div class="info" style="grid-column:1/-1"><div class="k">This voicing</div><div class="v" id="voicingNotes"></div></div>
-          <div class="info" style="grid-column:1/-1"><div class="row" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div class="k">Capo helper</div>
+          ${piano ? '' : `<div class="info" style="grid-column:1/-1"><div class="row" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div class="k">Capo helper</div>
             <div class="stepper" style="height:36px"><button id="capoDown" aria-label="Capo down" style="width:36px;height:36px">−</button><span id="capoVal" style="min-width:60px;font-size:13px">No capo</span><button id="capoUp" aria-label="Capo up" style="width:36px;height:36px">+</button></div></div>
-            <div class="v" id="capoText" style="font-size:15px;font-weight:500;color:var(--muted)">Add a capo to see which easier shape gives you this sound.</div></div>
+            <div class="v" id="capoText" style="font-size:15px;font-weight:500;color:var(--muted)">Add a capo to see which easier shape gives you this sound.</div></div>`}
         </div>
       </section>
-      ${vs.length > 1 ? `<section class="section"><div class="section-head"><h2>All voicings</h2></div><div class="thumbs" id="thumbs">${vs.map((v, i) => `<button class="thumb${i === vi ? ' on' : ''}" data-i="${i}">${window.Diagram.render(v, diagramOpts(dk, { size: 'sm', hideNotes: true, labels: 'none' }))}<div class="lbl">${v.b > 1 ? v.b + 'fr' : 'Open'}</div></button>`).join('')}</div></section>` : ''}
-      <section class="section" id="videoSection">${videoHtml(video, dk, suffix)}</section>
+      ${vs.length > 1 ? `<section class="section"><div class="section-head"><h2>All voicings</h2></div><div class="thumbs" id="thumbs">${vs.map((v, i) => `<button class="thumb${i === vi ? ' on' : ''}" data-i="${i}">${renderDiagram(v, dk, { size: 'sm', hideNotes: true, labels: 'none' })}<div class="lbl">${esc(voicingLabel(v))}</div></button>`).join('')}</div></section>` : ''}
+      <section class="section" id="videoSection">${piano ? pianoVideoHtml(dk, suffix) : videoHtml(video, dk, suffix)}</section>
       <section class="section"><div class="section-head"><h2>${rootHtml(dk)} chords</h2><a href="#/root/${encodeURIComponent(dk)}">See all</a></div>
         <div class="hscroll">${sufs.filter(s => s !== suffix).slice(0, 14).map(s => `<a class="chip" href="${href(dk, s)}">${symHtml(dk, s)}</a>`).join('')}</div></section>
       ${sameType.length ? `<section class="section"><div class="section-head"><h2>Other ${esc(info.name)} chords</h2>${T.TYPES[suffix] ? `<a href="#/type/${encodeURIComponent(suffix)}">See all</a>` : ''}</div>
@@ -349,9 +373,16 @@
       $$('#dots button').forEach((d, j) => d.classList.toggle('on', j === i));
       $$('#thumbs .thumb').forEach((d, j) => d.classList.toggle('on', j === i));
       const v = vs[i];
-      const nn = T.voicingNoteNames(v, dk);
-      $('#voicingNotes').innerHTML = nn.map((n, s) => n == null ? `<span style="color:var(--faint)">×</span>` : `<span class="${T.pc(n) === T.pc(dk) ? 'root' : ''}">${rootHtml(n)}</span>`).join(' <span style="color:var(--faint)">·</span> ') +
-        `<div style="font-size:13px;color:var(--muted);font-weight:500;margin-top:4px">${v.b > 1 ? `Starts at the ${T.ordinal(v.b)} fret` : 'Open position'}${v.r && v.r.length ? ' · barre with finger 1' : ''} · low to high string</div>`;
+      if (piano) {
+        const flats = T.prefersFlats(dk);
+        const names = v.midi.map(m => T.noteName(m, flats) + (Math.floor(m / 12) - 1));
+        $('#voicingNotes').innerHTML = names.map(n => `<span class="${T.pc(n.replace(/[0-9]/g, '')) === T.pc(dk) ? 'root' : ''}">${rootHtml(n.replace(/[0-9]/g, ''))}<small style="font-size:.7em;color:var(--muted)">${n.replace(/[^0-9]/g, '')}</small></span>`).join(' <span style="color:var(--faint)">·</span> ') +
+          `<div style="font-size:13px;color:var(--muted);font-weight:500;margin-top:4px">${esc(v.name)}${v.fingers ? ' · right-hand fingers ' + v.fingers.join('-') : ''} · low to high</div>`;
+      } else {
+        const nn = T.voicingNoteNames(v, dk);
+        $('#voicingNotes').innerHTML = nn.map((n, s) => n == null ? `<span style="color:var(--faint)">×</span>` : `<span class="${T.pc(n) === T.pc(dk) ? 'root' : ''}">${rootHtml(n)}</span>`).join(' <span style="color:var(--faint)">·</span> ') +
+          `<div style="font-size:13px;color:var(--muted);font-weight:500;margin-top:4px">${v.b > 1 ? `Starts at the ${T.ordinal(v.b)} fret` : 'Open position'}${v.r && v.r.length ? ' · barre with finger 1' : ''} · low to high string</div>`;
+      }
       if (updateHash) history.replaceState(null, '', href(dk, suffix, i));
     };
     const scrollTo = (i, smooth = true) => { cards[i].scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', inline: 'center', block: 'nearest' }); };
@@ -377,13 +408,14 @@
       if (!settings.sound) { toast('Sound is turned off in Settings'); return; }
       if (!window.Sound.available) { toast('Audio is not supported here'); return; }
       const v = vs[current];
-      window.Sound.play(T.voicingMidi(v), mode);
+      window.Sound.play(midiOf(v), mode, settings.instrument);
       const btn = mode === 'arpeggio' ? $('#arpBtn') : $('#playBtn');
       btn.classList.remove('playing'); void btn.offsetWidth; btn.classList.add('playing');
       haptic();
     };
     let capo = 0;
     const renderCapo = () => {
+      if (piano) return;
       $('#capoVal').textContent = capo ? `Capo ${capo}` : 'No capo';
       const el = $('#capoText');
       if (!capo) { el.innerHTML = 'Add a capo to see which easier shape gives you this sound.'; return; }
@@ -392,8 +424,10 @@
       const soundsAs = T.DATA_KEYS[(T.pc(dk) + capo) % 12];
       el.innerHTML = `With a capo on fret ${capo}, play the <b style="color:var(--text)">${shape}</b> shape to sound ${symHtml(dk, suffix)}.<br><span style="font-size:13px">And this ${symHtml(dk, suffix)} shape with capo ${capo} sounds as ${symHtml(soundsAs, suffix)}.</span>`;
     };
-    $('#capoDown').onclick = () => { capo = Math.max(0, capo - 1); renderCapo(); };
-    $('#capoUp').onclick = () => { capo = Math.min(9, capo + 1); renderCapo(); };
+    if (!piano) {
+      $('#capoDown').onclick = () => { capo = Math.max(0, capo - 1); renderCapo(); };
+      $('#capoUp').onclick = () => { capo = Math.min(9, capo + 1); renderCapo(); };
+    }
     $('#playBtn').onclick = () => play('strum');
     $('#arpBtn').onclick = () => play('arpeggio');
     $('#addProgBtn').onclick = () => { progression.push({ root: dk, suffix, vi: current }); store.set('progression', progression); toast(`Added ${T.chordSymbol(dk, suffix)} to progression`); haptic(); };
@@ -411,8 +445,8 @@
   }
 
   function shareChord(root, suffix, vi) {
-    const url = location.origin + location.pathname + href(root, suffix, vi);
-    const title = `${T.chordSymbol(root, suffix)} guitar chord`;
+    const url = location.origin + location.pathname + href(root, suffix, vi) + '?i=' + settings.instrument;
+    const title = `${T.chordSymbol(root, suffix)} ${settings.instrument} chord`;
     if (navigator.share) navigator.share({ title, text: `${T.chordLongName(root, suffix)} on Chordbook`, url }).catch(() => { /* cancelled */ });
     else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => toast('Link copied'));
   }
@@ -458,7 +492,16 @@
         </div>
       </div>`;
   }
+  function pianoVideoHtml(root, suffix) {
+    const v = findVideo(root, suffix);
+    return `<div class="section-head"><h2>Lessons</h2></div>
+      <div class="video-card"><div class="video-meta"><span class="video-pill">Piano mode</span>
+        <div class="t">JustinGuitar lessons are guitar-specific, so there is no video here in piano mode.</div>
+        <div class="a">${v ? `Switch to guitar to watch “${esc(v.title)}” for this chord.` : 'Switch to guitar to see the related lesson for this chord.'} Piano voicings shown here are standard root-position and inverted shapes with suggested right-hand fingering.</div>
+        <div class="links"><button class="chip accent" id="toGuitar">${I.guitarIcon} Show on guitar</button></div></div></div>`;
+  }
   function wireVideo() {
+    const tg = $('#toGuitar'); if (tg) tg.onclick = () => setInstrument('guitar');
     const f = $('#videoFrame'); if (!f) return;
     f.querySelector('.playbtn').onclick = () => {
       const id = f.dataset.id;
@@ -481,11 +524,13 @@
     const bpm = store.get('bpm', 80);
     if (stopSeq) { stopSeq(); stopSeq = null; }
     const items = progression.map((p, i) => {
-      const v = voicings(p.root, p.suffix)[p.vi] || voicings(p.root, p.suffix)[0];
-      return `<div class="prog-item" data-i="${i}"><button class="rm" aria-label="Remove">×</button>${cardHtml(p.root, p.suffix, { vi: v ? Math.min(p.vi || 0, voicings(p.root, p.suffix).length - 1) : 0, meta: v && v.b > 1 ? T.ordinal(v.b) + ' fret' : 'Open position' })}</div>`;
+      const all = voicingsFor(p.root, p.suffix);
+      const vi = Math.min(p.vi || 0, all.length - 1);
+      const v = all[vi];
+      return `<div class="prog-item" data-i="${i}"><button class="rm" aria-label="Remove">×</button>${cardHtml(p.root, p.suffix, { vi, meta: !v ? '' : isPiano() ? v.name : v.b > 1 ? T.ordinal(v.b) + ' fret' : 'Open position' })}</div>`;
     }).join('');
     main.innerHTML = `<div class="view">
-      <div class="hero"><h1 class="display" style="font-size:34px">Progression</h1><p>Build a chord sequence, hear it strummed, transpose it to any key.</p></div>
+      <div class="hero"><h1 class="display" style="font-size:34px">Progression</h1><p>Build a chord sequence, hear it ${isPiano() ? 'played' : 'strummed'}, transpose it to any key.</p></div>
       <section class="section">
         <div class="search-wrap"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input class="search-input" id="progSearch" placeholder="Add a chord, e.g. G, Em, Cadd9" aria-label="Add a chord" autocapitalize="off" autocorrect="off"></div>
@@ -526,33 +571,45 @@
         if (stopSeq) { stopSeq(); stopSeq = null; $('#progPlay').innerHTML = I.play + 'Play'; $$('.prog-item').forEach(x => x.classList.remove('now')); return; }
         if (!settings.sound) { toast('Sound is turned off in Settings'); return; }
         const interval = 60 / store.get('bpm', 80) * 4; // one bar per chord
-        const list = progression.map(p => { const vs = voicings(p.root, p.suffix); return T.voicingMidi(vs[Math.min(p.vi || 0, vs.length - 1)]); });
+        const list = progression.map(p => { const vs = voicingsFor(p.root, p.suffix); return midiOf(vs[Math.min(p.vi || 0, vs.length - 1)]); });
         $('#progPlay').innerHTML = I.play + 'Stop';
         stopSeq = window.Sound.playSequence(list, interval, i => {
           $$('.prog-item').forEach((x, j) => x.classList.toggle('now', j === i));
           if (i >= 0) { const el = $$('.prog-item')[i]; el && el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }
           if (i === -1) { stopSeq = null; const b = $('#progPlay'); if (b) b.innerHTML = I.play + 'Play'; }
-        });
+        }, settings.instrument);
       };
     }
   }
 
   /* ---- finder (reverse lookup) ---- */
-  const finderState = { frets: [-1, -1, -1, -1, -1, -1] };
+  const finderState = { frets: [-1, -1, -1, -1, -1, -1], keys: new Set() };
   function renderFinder() {
+    const piano = isPiano();
     main.innerHTML = `<div class="view">
-      <div class="hero"><h1 class="display" style="font-size:34px">Chord finder</h1><p>Tap where your fingers are and we’ll name the chord. Tap a string’s ✕ to mute it, or the circle for an open string.</p></div>
-      <section class="section"><div class="fretboard-wrap" id="fbWrap"></div>
+      <div class="hero"><h1 class="display" style="font-size:34px">Chord finder</h1><p>${piano ? 'Tap the keys you are holding down and we’ll name the chord. Tap a key again to release it.' : 'Tap where your fingers are and we’ll name the chord. Tap a string’s ✕ to mute it, or the circle for an open string.'}</p></div>
+      <section class="section"><div class="${piano ? 'piano-wrap' : 'fretboard-wrap'}" id="fbWrap"></div>
         <div class="control-row"><button class="btn small" id="fbPlay">${I.play}Play</button><button class="btn small" id="fbClear">${I.trash}Clear</button>
           <span class="blurb" style="margin:0 0 0 auto" id="fbNotes"></span></div>
       </section>
       <section class="section"><div class="section-head"><h2>Matches</h2></div><div class="results" id="fbResults"></div></section>
     </div>`;
-    drawFretboard();
-    $('#fbClear').onclick = () => { finderState.frets = [-1, -1, -1, -1, -1, -1]; drawFretboard(); };
-    $('#fbPlay').onclick = () => { const m = finderMidi(); if (m.filter(x => x != null).length) window.Sound.play(m, 'strum'); };
+    if (piano) drawKeys(); else drawFretboard();
+    $('#fbClear').onclick = () => { finderState.frets = [-1, -1, -1, -1, -1, -1]; finderState.keys.clear(); if (isPiano()) drawKeys(); else drawFretboard(); };
+    $('#fbPlay').onclick = () => { const m = finderMidi(); if (m.filter(x => x != null).length) window.Sound.play(m, 'strum', settings.instrument); };
   }
-  function finderMidi() { return finderState.frets.map((f, i) => (f < 0 ? null : T.OPEN_MIDI[i] + f)); }
+  function finderMidi() { return isPiano() ? Array.from(finderState.keys).sort((a, b) => a - b) : finderState.frets.map((f, i) => (f < 0 ? null : T.OPEN_MIDI[i] + f)); }
+  function drawKeys() {
+    const wrap = $('#fbWrap');
+    const midi = Array.from(finderState.keys);
+    wrap.innerHTML = window.Piano.render({ midi, fingers: null }, { labels: 'notes', tappable: true, range: [48, 83], title: 'Tap piano keys' }).replace('class="piano-svg', 'class="piano-svg tappable');
+    $$('[data-m]', wrap).forEach(el => el.addEventListener('click', () => {
+      const m = +el.dataset.m;
+      if (finderState.keys.has(m)) finderState.keys.delete(m); else { finderState.keys.add(m); if (settings.sound) window.Sound.play([m], 'strum', 'piano'); }
+      drawKeys(); haptic();
+    }));
+    updateFinderResults();
+  }
   function drawFretboard() {
     const NF = 12, cellW = 46, cellH = 30, left = 100, top = 16;
     const W = left + cellW * NF + 14, H = top + cellH * 6 + 22;
@@ -623,26 +680,28 @@
     main.innerHTML = `<div class="view">
       <div class="hero"><h1 class="display" style="font-size:34px">Settings</h1><p>Make Chordbook yours.</p></div>
       <section class="section settings-list">
+        <div class="setting"><div class="row"><div><div class="k">Instrument</div><div class="d">Guitar shapes or piano inversions, everywhere in the app.</div></div>${seg('segInst', [['guitar', 'Guitar'], ['piano', 'Piano']], settings.instrument)}</div></div>
         <div class="setting"><div class="row"><div><div class="k">Appearance</div><div class="d">Auto follows your device.</div></div>${seg('segTheme', [['auto', 'Auto'], ['dark', 'Dark'], ['light', 'Light']], settings.theme)}</div></div>
-        <div class="setting"><div class="row"><div><div class="k">Left-handed</div><div class="d">Mirror every diagram and the finder fretboard.</div></div><button class="switch${settings.lefty ? ' on' : ''}" id="swLefty" role="switch" aria-checked="${settings.lefty}" aria-label="Left-handed"></button></div></div>
-        <div class="setting"><div class="row"><div><div class="k">Dot labels</div><div class="d">Show finger numbers or note names on the dots.</div></div>${seg('segLabels', [['fingers', 'Fingers'], ['notes', 'Notes'], ['none', 'None']], settings.labels)}</div></div>
-        <div class="setting"><div class="row"><div><div class="k">Sound</div><div class="d">Strum chords with the built-in string synth.</div></div><button class="switch${settings.sound ? ' on' : ''}" id="swSound" role="switch" aria-checked="${settings.sound}" aria-label="Sound"></button></div></div>
-        <div class="setting"><div class="row"><div><div class="k">Preview</div><div class="d">How your diagrams will look.</div></div></div><div style="max-width:200px;margin:8px auto 0" id="previewDiagram">${window.Diagram.render(voicings('C', 'major')[0], diagramOpts('C'))}</div></div>
+        <div class="setting"><div class="row"><div><div class="k">Left-handed</div><div class="d">Mirror every guitar diagram and the finder fretboard.</div></div><button class="switch${settings.lefty ? ' on' : ''}" id="swLefty" role="switch" aria-checked="${settings.lefty}" aria-label="Left-handed"></button></div></div>
+        <div class="setting"><div class="row"><div><div class="k">Labels</div><div class="d">Show finger numbers or note names on the ${isPiano() ? 'keys' : 'dots'}.</div></div>${seg('segLabels', [['fingers', 'Fingers'], ['notes', 'Notes'], ['none', 'None']], settings.labels)}</div></div>
+        <div class="setting"><div class="row"><div><div class="k">Sound</div><div class="d">Play chords with the built-in ${isPiano() ? 'piano' : 'string'} synth.</div></div><button class="switch${settings.sound ? ' on' : ''}" id="swSound" role="switch" aria-checked="${settings.sound}" aria-label="Sound"></button></div></div>
+        <div class="setting"><div class="row"><div><div class="k">Preview</div><div class="d">How your diagrams will look.</div></div></div><div style="max-width:${isPiano() ? 360 : 200}px;margin:8px auto 0" id="previewDiagram">${renderDiagram(voicingsFor('C', 'major')[0], 'C')}</div></div>
         ${!isStandalone() ? `<div class="setting"><div class="row"><div><div class="k">Install the app</div><div class="d">${deferredInstall ? 'Add Chordbook to your home screen for offline use.' : 'On iPhone: Share → Add to Home Screen. On Android/desktop: use your browser’s Install option.'}</div></div>${deferredInstall ? `<button class="btn small primary" id="installBtn2">Install</button>` : ''}</div></div>` : ''}
         <div class="setting"><div class="row"><div><div class="k">Reset</div><div class="d">Clear favourites, recents and progression.</div></div><button class="btn small" id="resetBtn">Reset</button></div></div>
-        <div class="setting about"><b style="color:var(--text)">About Chordbook</b><br>A free, open guitar chord chart that works offline. ${Object.values(DATA).reduce((n, r) => n + Object.values(r).reduce((m, v) => m + v.length, 0), 0)} voicings across ${Object.values(DATA).reduce((n, r) => n + Object.keys(r).length, 0)} chords.<br><br>
+        <div class="setting about"><b style="color:var(--text)">About Chordbook</b><br>A free, open guitar and piano chord chart that works offline. ${Object.values(DATA).reduce((n, r) => n + Object.values(r).reduce((m, v) => m + v.length, 0), 0)} voicings across ${Object.values(DATA).reduce((n, r) => n + Object.keys(r).length, 0)} chords.<br><br>
           Chord voicing data adapted from <a href="https://github.com/tombatossals/chords-db" target="_blank" rel="noopener">chords-db</a> (MIT licence, © David Rubert), with power chords added.<br>
           Video lessons are by <a href="https://www.justinguitar.com" target="_blank" rel="noopener">JustinGuitar</a> (Justin Sandercoe), embedded from YouTube with attribution. Chordbook is not affiliated with JustinGuitar.<br>
           Diagrams and sounds are generated in your browser. Nothing is tracked.<br><br><span style="color:var(--faint)">Version ${APP_VERSION}</span></div>
       </section></div>`;
     $$('#segTheme button').forEach(b => b.onclick = () => { settings.theme = b.dataset.v; saveSettings(); applyTheme(); renderSettings(); });
+    $$('#segInst button').forEach(b => b.onclick = () => setInstrument(b.dataset.v));
     $$('#segLabels button').forEach(b => b.onclick = () => { settings.labels = b.dataset.v; saveSettings(); renderSettings(); });
     $('#swLefty').onclick = () => { settings.lefty = !settings.lefty; saveSettings(); renderSettings(); };
     $('#swSound').onclick = () => { settings.sound = !settings.sound; saveSettings(); renderSettings(); };
     const ib = $('#installBtn2'); if (ib) ib.onclick = async () => { deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; renderSettings(); };
     $('#resetBtn').onclick = () => { if (confirm('Reset favourites, recents and progression?')) { favorites = []; recents = []; progression = []; store.set('favorites', []); store.set('recents', []); store.set('progression', []); toast('Reset done'); } };
   }
-  const APP_VERSION = '0.9.0';
+  const APP_VERSION = '1.1.0';
 
   /* ---------- search box wiring ---------- */
   const si = $('#searchInput');
@@ -674,5 +733,7 @@
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { /* offline support unavailable */ }));
   }
 
+  $$('#instToggle button').forEach(b => b.onclick = () => setInstrument(b.dataset.inst));
+  updateInstToggle();
   route();
 })();
