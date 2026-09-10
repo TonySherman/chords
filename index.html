@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Chordbook · Guitar Chord Charts</title>
+  <meta name="description" content="A fast, mobile-first guitar chord chart. Search any chord, browse every variation, hear it, and learn it with JustinGuitar.">
+  <meta name="theme-color" content="#14110f">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#14110f; --bg2:#1d1916; --panel:#241f1b; --line:#3a322c;
+      --text:#f4ede4; --muted:#a3968a; --accent:#f2a33a; --accent2:#e0642f;
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%}
+    body{
+      font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      background:radial-gradient(1200px 700px at 50% -10%, #3a2a1d 0%, var(--bg) 60%);
+      color:var(--text);
+      min-height:100dvh; display:grid; place-items:center;
+      padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));
+    }
+    .hero{max-width:440px;width:100%;text-align:center}
+    .logo{width:120px;height:120px;margin:0 auto 22px;display:block;filter:drop-shadow(0 12px 30px rgba(242,163,58,.25))}
+    h1{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:clamp(40px,10vw,56px);letter-spacing:-.02em;margin:0 0 10px;line-height:1}
+    h1 span{color:var(--accent)}
+    p.tag{color:var(--muted);font-size:17px;line-height:1.5;margin:0 0 30px}
+    .cta{
+      display:inline-flex;align-items:center;gap:10px;justify-content:center;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));color:#1a120a;
+      font-weight:700;font-size:17px;border:0;border-radius:999px;padding:16px 28px;
+      text-decoration:none;box-shadow:0 10px 30px rgba(224,100,47,.35);
+      transition:transform .15s ease;
+    }
+    .cta:active{transform:scale(.97)}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:34px}
+    .chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:7px 12px;font-size:13px}
+    footer{margin-top:40px;color:#7d7167;font-size:12px}
+  </style>
+</head>
+<body>
+  <main class="hero">
+    <svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f2a33a"/><stop offset="1" stop-color="#e0642f"/>
+        </linearGradient>
+      </defs>
+      <rect x="6" y="6" width="108" height="108" rx="28" fill="url(#g)"/>
+      <g stroke="#1a120a" stroke-width="3" stroke-linecap="round">
+        <line x1="30" y1="34" x2="90" y2="34" stroke-width="6"/>
+        <line x1="30" y1="52" x2="90" y2="52"/><line x1="30" y1="70" x2="90" y2="70"/><line x1="30" y1="88" x2="90" y2="88"/>
+        <line x1="30" y1="34" x2="30" y2="96"/><line x1="42" y1="34" x2="42" y2="96"/><line x1="54" y1="34" x2="54" y2="96"/>
+        <line x1="66" y1="34" x2="66" y2="96"/><line x1="78" y1="34" x2="78" y2="96"/><line x1="90" y1="34" x2="90" y2="96"/>
+      </g>
+      <g fill="#1a120a">
+        <circle cx="54" cy="61" r="5.5"/><circle cx="78" cy="43" r="5.5"/><circle cx="90" cy="79" r="5.5"/>
+      </g>
+    </svg>
+    <h1>Chord<span>book</span></h1>
+    <p class="tag">Every guitar chord, every variation, in your pocket. Search, hear, and learn each chord with JustinGuitar.</p>
+    <a class="cta" href="#" aria-disabled="true">Open the chord library</a>
+    <div class="chips">
+      <span class="chip">Search any chord</span><span class="chip">All variations</span>
+      <span class="chip">Left-handed mode</span><span class="chip">Works offline</span>
+    </div>
+    <footer>Building in progress · this title screen will become the full app.</footer>
+  </main>
+</body>
+</html>
