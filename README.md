@@ -1,16 +1,17 @@
 # Chordbook
 
-A mobile-first, installable (PWA) guitar chord chart. Search any chord, browse every voicing, hear it strummed, identify chords from a fretboard, build and transpose progressions, and learn each chord with a JustinGuitar lesson.
+A mobile-first, installable (PWA) guitar and piano chord chart. Search any chord, browse every voicing, hear it strummed, identify chords from a fretboard, build and transpose progressions, and learn each chord with a JustinGuitar lesson.
 
 It is a plain static site: open `index.html` (or serve the folder) and everything loads from there. No build step.
 
 ## Features
-- 528 chords · 2,054 voicings across 12 roots and 40+ chord types, including slash and power chords
+- 528 chords · 2,054 guitar voicings across 12 roots and 40+ chord types, including slash and power chords
+- Piano mode: root position, inversions and two-hand voicings for every chord, with suggested right-hand fingering, on a keyboard diagram
 - Crisp SVG diagrams with finger numbers or note names, barres, base-fret markers and left-handed mirroring
 - Search that understands "Am7", "F sharp minor", "C/G", "power chord" and enharmonic spellings
 - Swipeable voicing carousel, favourites, recents, shareable links (`#/chord/C/m7/2`)
-- Built-in string synth (Karplus–Strong) for strum and arpeggio playback, no samples needed
-- Chord Finder: tap the fretboard, get the chord name
+- Built-in string synth (Karplus–Strong) and piano tone for strum and arpeggio playback, no samples needed
+- Chord Finder: tap the fretboard or the piano keys, get the chord name
 - Progression builder with transpose, tempo and play-through
 - Capo helper, dark/light themes, offline support and home-screen install
 - A JustinGuitar YouTube lesson (Shorts preferred) for each chord, with attribution

@@ -82,6 +82,8 @@ main { flex: 1; padding: 0 16px calc(var(--nav-h) + 24px + env(safe-area-inset-b
 .hero { padding: 18px 0 6px; position: relative; }
 .hero.home { min-height: 150px; padding-right: 156px; }
 .hero.home::after { content: ''; position: absolute; right: -66px; top: -24px; width: 220px; height: 220px; background: url('../assets/hero-guitar.webp') center / contain no-repeat; opacity: .92; pointer-events: none; filter: drop-shadow(0 12px 24px rgba(0,0,0,.35)); transform: rotate(8deg); }
+.hero.home.piano::after { background-image: url('../assets/hero-piano.webp'); transform: none; width: 190px; height: 190px; right: -28px; top: -4px; }
+@media (min-width: 640px) { .hero.home.piano::after { width: 230px; height: 230px; right: 0; } }
 :root[data-theme="light"] .hero.home::after { filter: drop-shadow(0 12px 24px rgba(120,70,20,.25)); }
 @media (min-width: 640px) { .hero.home::after { right: 0; width: 260px; height: 260px; } .hero.home { padding-right: 240px; } }
 .hero h1 { font-size: clamp(34px, 9vw, 46px); line-height: 1.02; }
@@ -315,3 +317,31 @@ main { flex: 1; padding: 0 16px calc(var(--nav-h) + 24px + env(safe-area-inset-b
   .chip:hover, .root-btn:hover, .chord-card:hover, .type-row:hover, .thumb:hover, .icon-btn:hover, .btn:hover:not(.primary) { border-color: var(--accent); }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Piano mode */
+.piano-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.pk-white { fill: #fbf7f0; stroke: #b9ad9e; stroke-width: 1; }
+.pk-black { fill: #2a2420; stroke: #100d0b; stroke-width: 1; }
+:root[data-theme="light"] .pk-white { fill: #ffffff; stroke: #cfc4b4; }
+.pk-white.on { fill: var(--accent); stroke: var(--accent-2); }
+.pk-black.on { fill: var(--accent-2); stroke: var(--accent-2); }
+.pk-white.on.root { fill: var(--accent-2); }
+.pk-black.on.root { fill: #b8441c; }
+.pk-white.on.lh { fill: color-mix(in srgb, var(--accent) 55%, #fbf7f0); }
+.pk-black.on.lh { fill: color-mix(in srgb, var(--accent-2) 55%, #2a2420); }
+.pk-label { fill: var(--on-accent); font-size: 11px; font-weight: 700; font-family: Inter, system-ui, sans-serif; pointer-events: none; }
+.pk-label.on-black { font-size: 9px; }
+.pk-octave { fill: var(--faint); font-size: 10px; font-family: Inter, system-ui, sans-serif; }
+.piano-svg-sm .pk-label { font-size: 12px; }
+.piano-svg-sm .pk-label.on-black { font-size: 10px; }
+.piano-svg.tappable .pk-white, .piano-svg.tappable .pk-black { cursor: pointer; }
+.chord-card .piano-svg { width: 100%; }
+.voicing-card .piano-svg { max-width: 100%; margin: 6px auto; }
+.piano-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 10px 8px; overflow-x: auto; }
+.piano-wrap .piano-svg { min-width: 520px; }
+.inst-toggle { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; flex: none; }
+.inst-toggle button { width: 38px; height: 34px; border-radius: 999px; display: grid; place-items: center; color: var(--muted); }
+.inst-toggle button svg { width: 20px; height: 20px; }
+.inst-toggle button.on { background: var(--accent); color: var(--on-accent); }
+.hand-legend { display: flex; gap: 12px; font-size: 12px; color: var(--muted); justify-content: center; margin-top: 4px; }
+.hand-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }

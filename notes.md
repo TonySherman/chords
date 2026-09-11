@@ -30,3 +30,18 @@ Working log for the guitar chord chart PWA. Newest entries at the bottom.
 - **Keyboard**: ← → switch voicings, space strums (desktop nicety).
 - **Image generation**: used gpt-image-2 once for a decorative sunburst acoustic guitar on the home hero (transparent WebP, downscaled in Chromium to 640px / 42 KB). Everything functional stays SVG.
 - README added. Service-worker cache bumped to `cb-v2` so installed copies refresh.
+
+## 2026-09-10 — Piano mode (branch `claude/piano-mode`, off `main`)
+- `main` already contained the whole guitar app (it was created from the feature branch), so piano mode starts from `main` on a fresh branch.
+- **Approach**: one app, one instrument toggle (top bar + Settings). Everything that is not a diagram is shared: search, routing, favourites, recents, progression, transpose, theming, PWA.
+- **`js/piano.js`**
+  - `voicings(root, suffix)` derives piano voicings from the type's interval formula: root position in the middle-C octave, then 1st/2nd/3rd inversions (lowest note moved up an octave), plus a "Two hands" voicing (root, and the fifth for 4+ note chords, an octave below). Slash chords get their bass note in the left hand. Notes are kept inside C4–C6 for readability.
+  - Suggested right-hand fingerings by chord size and inversion (triads 1-3-5 / 1-2-5 / 1-3-5, four-note 1-2-3-5 / 1-2-4-5 …); left-hand notes are marked "L".
+  - `render(voicing, opts)` draws a keyboard SVG covering whole octaves (at least two), highlights pressed keys (root darker, left hand lighter), labels with fingers or note names, and supports a tappable mode for the Finder.
+- **Audio**: added an additive piano tone (7 partials with per-partial decay, slight inharmonicity, percussive attack) rendered into cached AudioBuffers, alongside the Karplus–Strong guitar. `Sound.play` and `playSequence` take an instrument argument; piano "strums" are near-simultaneous.
+- **App wiring**: `voicingsFor`, `midiOf`, `renderDiagram` and `voicingLabel` dispatch on the instrument, so cards, search results, root/type pages, chord detail, thumbnails, progression and settings preview all switch. The capo helper hides in piano mode; the Finder becomes a 3-octave tappable keyboard; share links carry `?i=piano|guitar` so a shared chord opens in the right instrument.
+- **Lessons**: JustinGuitar is guitar-only, so the lesson card is hidden entirely in piano mode (an earlier draft showed a "switch to guitar" card; removed at the user's request).
+- Home hero swaps to a matching gpt-image-2 piano illustration in piano mode. Search placeholder shortened to make room for the instrument toggle on phones.
+- Tested both modes with Playwright (no console errors); service-worker cache bumped to `cb-v3`, app version 1.1.0.
+- **Piano tone v2**: first version was tinny. Rebuilt it around a strong, slightly detuned-unison fundamental with quiet upper partials that decay 2–9× faster than the fundamental (the note darkens as it rings), low notes sustaining longer, and a dedicated piano bus (2.6 kHz low-pass + low-shelf warmth) before the master. Still synthesised, no samples.
+- **Piano slash chords**: piano is not limited by the guitar library, so any major/minor over any bass (e.g. C/B♭, Am/G) now resolves in piano mode via search, the Finder and the progression. Transposing a progression now moves the slash bass along with the root (previously E/A would have been produced from D/A).

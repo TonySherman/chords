@@ -1,8 +1,8 @@
 /* Chordbook service worker: precache the app shell, cache-first for same-origin, network-first for the shell HTML. */
-const VERSION = 'cb-v2';
+const VERSION = 'cb-v3';
 const SHELL = [
-  './', './index.html', './css/app.css', './js/theory.js', './js/diagram.js', './js/audio.js', './js/app.js',
-  './data/chords.js', './data/videos.js', './manifest.webmanifest', './assets/icon.svg', './assets/icon-192.png', './assets/icon-512.png', './assets/hero-guitar.webp',
+  './', './index.html', './css/app.css', './js/theory.js', './js/diagram.js', './js/piano.js', './js/audio.js', './js/app.js',
+  './data/chords.js', './data/videos.js', './manifest.webmanifest', './assets/icon.svg', './assets/icon-192.png', './assets/icon-512.png', './assets/hero-guitar.webp', './assets/hero-piano.webp',
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
